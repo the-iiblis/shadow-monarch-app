@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚔️ Shadow Monarch — Daily Quest System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Exo+2:wght@300;400;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   SHADOW MONARCH — DESIGN TOKENS                        ║
+   ╚══════════════════════════════════════════════════════════╝ */
+:root {
+  /* Core palette — Solo Leveling */
+  --void:         #02020e;
+  --abyss:        #06061a;
+  --dungeon:      #0a0a24;
+  --chamber:      #0e0e30;
+  --vault:        #12123a;
+
+  --purple:       #8b00ff;
+  --purple-bright:#b44dff;
+  --purple-glow:  rgba(139,0,255,0.35);
+  --purple-trace: rgba(139,0,255,0.08);
+
+  --blue:         #0af;
+  --blue-bright:  #33ccff;
+  --blue-glow:    rgba(0,170,255,0.3);
+
+  --gold:         #ffc200;
+  --gold-bright:  #ffe066;
+  --gold-dim:     #7a5a00;
+  --gold-glow:    rgba(255,194,0,0.4);
+  --gold-trace:   rgba(255,194,0,0.08);
+
+  --red:          #ff2255;
+  --red-dim:      #3d0015;
+
+  --green:        #00ffaa;
+  --green-dim:    #003d28;
+  --green-glow:   rgba(0,255,170,0.3);
+
+  --text:         #dde0ff;
+  --text-muted:   #5a5a8a;
+  --text-faint:   #2a2a50;
+  --border:       #1e1e45;
+
+  /* Typography */
+  --font-display: 'Cinzel Decorative', serif;
+  --font-body:    'Exo 2', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   RESET & BASE                                          ║
+   ╚══════════════════════════════════════════════════════════╝ */
+*, *::before, *::after {
+  margin: 0; padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* Animated void background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 25%, rgba(139,0,255,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 70%, rgba(0,170,255,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 30% at 50% 100%, rgba(255,194,0,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  animation: void-breathe 12s ease-in-out infinite alternate;
+}
+
+@keyframes void-breathe {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* Grid lines overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.app { position: relative; z-index: 1; }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   INTRO / LANDING SCREEN                               ║
+   ╚══════════════════════════════════════════════════════════╝ */
+#intro-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  background: var(--void);
+  gap: 0;
+}
+
+.intro-rune {
+  font-size: clamp(60px, 15vw, 120px);
+  animation: rune-pulse 2s ease-in-out infinite;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+@keyframes rune-pulse {
+  0%,100% { filter: drop-shadow(0 0 10px var(--purple)) drop-shadow(0 0 30px var(--purple-glow)); }
+  50%      { filter: drop-shadow(0 0 20px var(--purple)) drop-shadow(0 0 60px var(--purple-glow)) drop-shadow(0 0 100px rgba(139,0,255,0.2)); }
+}
+
+.intro-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 6vw, 52px);
+  color: var(--gold);
+  text-shadow: 0 0 20px var(--gold-glow), 0 0 60px rgba(255,194,0,0.2);
+  text-align: center;
+  line-height: 1.2;
+  padding: 0 20px;
+  animation: title-appear 1s var(--ease-out) 0.3s both;
+}
+
+@keyframes title-appear {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.intro-sub {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 2.5vw, 14px);
+  color: var(--purple-bright);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  animation: title-appear 1s var(--ease-out) 0.6s both;
+}
+
+.intro-enter {
+  margin-top: 48px;
+  background: linear-gradient(135deg, var(--purple), #5500aa);
+  border: 1px solid var(--purple-bright);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 3px;
+  padding: 16px 48px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px var(--purple-glow), inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: title-appear 1s var(--ease-out) 0.9s both;
+}
+
+.intro-enter:hover {
+  background: linear-gradient(135deg, var(--purple-bright), var(--purple));
+  box-shadow: 0 0 40px var(--purple-glow), 0 0 80px rgba(139,0,255,0.2);
+  transform: translateY(-2px);
+}
+
+.intro-enter:active { transform: scale(0.97); }
+
+.intro-out {
+  animation: intro-exit 0.6s var(--ease-out) forwards;
+}
+
+@keyframes intro-exit {
+  to { opacity: 0; transform: scale(1.05); pointer-events: none; }
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   HUD — STICKY HEADER                                  ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.hud {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(180deg, var(--abyss) 0%, rgba(6,6,26,0.95) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 40px rgba(0,0,0,0.6), 0 1px 0 rgba(139,0,255,0.3);
+}
+
+.hud-crown {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 8px;
+  gap: 10px;
+}
+
+.hud-wordmark {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.hud-icon { font-size: 22px; }
+
+.hud-name {
+  font-family: var(--font-display);
+  font-size: clamp(11px, 3vw, 16px);
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold-glow);
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+.rank-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--purple-trace);
+  border: 1px solid var(--purple);
+  border-radius: 100px;
+  padding: 5px 14px;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 2.5vw, 12px);
+  color: var(--gold);
+  text-shadow: 0 0 8px var(--gold-glow);
+  white-space: nowrap;
+  transition: all 0.4s;
+  cursor: default;
+  box-shadow: 0 0 12px var(--purple-glow);
+}
+
+.rank-pill:hover {
+  background: rgba(139,0,255,0.15);
+  box-shadow: 0 0 20px var(--purple-glow);
+}
+
+/* XP Meter bar */
+.hud-xp-bar {
+  height: 3px;
+  background: var(--dungeon);
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--blue), var(--gold));
+  box-shadow: 0 0 10px var(--purple), 0 0 20px var(--blue-glow);
+  transition: width 0.8s var(--ease-out);
+  position: relative;
+}
+
+.hud-xp-fill::after {
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6));
+  animation: xp-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes xp-shimmer {
+  0%   { opacity: 0; transform: translateX(-20px); }
+  50%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(10px); }
+}
+
+/* Stats row */
+.hud-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border);
+}
+
+.hud-stat {
+  padding: 7px 8px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 1px;
+}
+
+.hud-stat:last-child { border-right: none; }
+
+.hud-stat-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hud-stat-val {
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 4vw, 20px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hud-stat-val.gold   { color: var(--gold);  text-shadow: 0 0 8px var(--gold-glow); }
+.hud-stat-val.green  { color: var(--green); text-shadow: 0 0 8px var(--green-glow); }
+.hud-stat-val.blue   { color: var(--blue);  text-shadow: 0 0 8px var(--blue-glow); }
+.hud-stat-val.red    { color: var(--red); }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   NAVIGATION TABS                                       ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.nav {
+  display: flex;
+  background: var(--abyss);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.nav::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  flex: 0 0 auto;
+  padding: 13px 18px;
+  background: none; border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-btn::after {
+  content: '';
+  position: absolute; bottom: 0; left: 12px; right: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+  border-radius: 2px 2px 0 0;
+  transform: scaleX(0);
+  transition: transform 0.25s var(--ease-out);
+}
+
+.nav-btn.active { color: var(--text); }
+.nav-btn.active::after { transform: scaleX(1); }
+.nav-btn:hover { color: var(--purple-bright); }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   PANELS                                                ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.panel { display: none; padding: 20px 16px; animation: panel-in 0.3s var(--ease-out); }
+.panel.active { display: block; }
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Section heading */
+.s-head {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--purple-bright);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.s-head::before {
+  content: '▸';
+  color: var(--purple);
+}
+
+.s-head::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   TODAY PANEL                                           ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.today-hero {
+  background: linear-gradient(135deg, var(--gold-trace), var(--purple-trace));
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.today-hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.today-hero-date {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 2.5vw, 13px);
+  color: var(--gold);
+  text-shadow: 0 0 8px var(--gold-glow);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.today-hero-progress {
+  display: flex; align-items: center; gap: 14px;
+}
+
+.today-big-pct {
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 10vw, 56px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.today-hero-right { flex: 1; }
+
+.today-bar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.today-bar {
+  height: 8px;
+  background: var(--dungeon);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.today-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.today-bar-fill::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  animation: bar-shine 2s ease-in-out infinite;
+}
+
+@keyframes bar-shine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.today-xp-gained {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gold);
+  margin-top: 6px;
+}
+
+/* Quest list */
+.quest-list { display: flex; flex-direction: column; gap: 6px; }
+
+.quest-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  min-height: 58px; /* ← Mobile touch target */
+  -webkit-user-select: none; user-select: none;
+}
+
+.quest-item::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--border);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.quest-item:hover { border-color: var(--purple); }
+.quest-item:active { transform: scale(0.99); }
+
+.quest-item.done {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+
+.quest-item.done::before {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green-glow);
+}
+
+/* Ripple on tap */
+.quest-item .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,255,170,0.3);
+  transform: scale(0);
+  animation: ripple-out 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple-out {
+  to { transform: scale(4); opacity: 0; }
+}
+
+.quest-emoji { font-size: 24px; flex-shrink: 0; }
+
+.quest-body { flex: 1; min-width: 0; }
+
+.quest-name {
+  font-size: clamp(13px, 3.5vw, 15px);
+  font-weight: 600;
+  color: var(--text);
+  transition: color 0.2s;
+  line-height: 1.3;
+}
+
+.quest-item.done .quest-name {
+  color: var(--green);
+  text-decoration: line-through;
+  text-decoration-color: rgba(0,255,170,0.4);
+}
+
+.quest-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.quest-item.done .quest-sub { color: rgba(0,255,170,0.5); }
+
+.quest-check {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: all 0.2s;
+  background: var(--abyss);
+}
+
+.quest-item.done .quest-check {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 12px var(--green-glow);
+  color: var(--void);
+  font-weight: 700;
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   DAILY LOG PANEL                                       ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.month-nav-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.month-display {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 5vw, 26px);
+  color: var(--gold);
+  text-shadow: 0 0 15px var(--gold-glow);
+}
+
+.month-arrows { display: flex; gap: 8px; }
+
+.arr-btn {
+  width: 36px; height: 36px;
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  color: var(--purple-bright);
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+
+.arr-btn:hover {
+  border-color: var(--purple);
+  box-shadow: 0 0 10px var(--purple-glow);
+}
+
+/* Habit accordion */
+.habit-accordion { display: flex; flex-direction: column; gap: 4px; }
+
+.hab-row {
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.hab-row.has-progress { border-color: rgba(139,0,255,0.3); }
+
+.hab-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+
+.hab-emoji { font-size: 20px; flex-shrink: 0; }
+
+.hab-info { flex: 1; min-width: 0; }
+
+.hab-name {
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.hab-meta {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px;
+}
+
+.hab-done-count {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--green); text-shadow: 0 0 6px var(--green-glow);
+}
+
+.hab-pct {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--blue); margin-left: auto;
+}
+
+.hab-mini-bar {
+  height: 2px; background: var(--border);
+  border-radius: 1px; margin-top: 5px; overflow: hidden;
+}
+
+.hab-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--green));
+  box-shadow: 0 0 4px var(--green-glow);
+  border-radius: 1px;
+  transition: width 0.5s var(--ease-out);
+}
+
+.hab-chevron {
+  font-size: 11px; color: var(--text-muted);
+  transition: transform 0.3s; flex-shrink: 0;
+}
+
+.hab-row.open .hab-chevron { transform: rotate(180deg); }
+
+/* Grid */
+.hab-grid-wrap {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 12px 16px 16px;
+}
+
+.hab-row.open .hab-grid-wrap { display: block; }
+
+.grid-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 3px;
+}
+
+.grid-day-label {
+  text-align: center;
+  font-family: var(--font-mono); font-size: 8px;
+  color: var(--text-faint);
+  padding: 4px 0;
+}
+
+.grid-day {
+  aspect-ratio: 1;
+  min-height: 34px; /* mobile target */
+  background: var(--abyss);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  position: relative;
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+
+.grid-day:hover { border-color: var(--purple); }
+.grid-day:active { transform: scale(0.9); }
+
+.grid-day.checked {
+  background: var(--green-dim);
+  border-color: var(--green);
+  box-shadow: 0 0 8px rgba(0,255,170,0.25);
+  color: var(--green);
+}
+
+.grid-day .gd-num { line-height: 1; }
+.grid-day .gd-check { font-size: 12px; margin-top: 1px; line-height: 1; }
+
+.grid-day.blank {
+  background: transparent; border-color: transparent;
+  cursor: default; opacity: 0;
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   DASHBOARD PANEL                                       ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.day-card {
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+  text-align: center;
+  transition: all 0.25s;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.day-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.day-card:hover { border-color: rgba(139,0,255,0.5); }
+.day-card:hover::after { opacity: 1; }
+
+.day-card.is-today {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.day-card.is-today::after {
+  background: var(--gold);
+  opacity: 1;
+}
+
+.dc-head {
+  font-family: var(--font-mono);
+  font-size: 9px; color: var(--text-muted);
+  letter-spacing: 1px; margin-bottom: 2px;
+}
+
+.today-tag {
+  font-family: var(--font-mono);
+  font-size: 8px; color: var(--gold);
+  text-shadow: 0 0 6px var(--gold-glow);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  display: none;
+}
+
+.day-card.is-today .today-tag { display: block; }
+
+/* SVG Donut */
+.donut-wrap {
+  position: relative;
+  width: 64px; height: 64px;
+  margin: 0 auto 8px;
+}
+
+.donut-svg { transform: rotate(-90deg); overflow: visible; }
+
+circle.d-bg { fill: none; stroke: var(--border); stroke-width: 7; }
+circle.d-fg {
+  fill: none; stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s var(--ease-out),
+              stroke 0.4s;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.donut-val {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 700;
+  line-height: 1;
+}
+
+.dc-tasks {
+  display: flex; flex-direction: column; gap: 2px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  text-align: left;
+}
+
+.dc-task {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.dc-task.done { color: var(--green); }
+.dc-task-icon { flex-shrink: 0; font-size: 9px; }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   ANALYSIS PANEL                                        ║
+   ╚══════════════════════════════════════════════════════════╝ */
+.an-list { display: flex; flex-direction: column; gap: 8px; }
+
+.an-card {
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+  transition: border-color 0.2s;
+}
+
+.an-card:hover { border-color: rgba(139,0,255,0.4); }
+
+.an-emoji { font-size: 22px; flex-shrink: 0; }
+
+.an-body { flex: 1; min-width: 0; }
+
+.an-name { font-size: 13px; font-weight: 600; margin-bottom: 7px; }
+
+.an-bar {
+  height: 5px; background: var(--border);
+  border-radius: 3px; overflow: hidden; margin-bottom: 5px;
+}
+
+.an-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--green));
+  box-shadow: 0 0 6px var(--green-glow);
+  border-radius: 3px;
+  transition: width 0.6s var(--ease-out);
+}
+
+.an-row {
+  display: flex; gap: 10px; align-items: center;
+  font-family: var(--font-mono); font-size: 10px;
+}
+
+.an-done { color: var(--green); }
+.an-goal { color: var(--text-muted); }
+.an-pct  { color: var(--blue); margin-left: auto; }
+
+.an-xp-block {
+  text-align: center; flex-shrink: 0;
+}
+
+.an-xp-num {
+  font-family: var(--font-mono);
+  font-size: 20px; font-weight: 700;
+  color: var(--gold); text-shadow: 0 0 10px var(--gold-glow);
+  line-height: 1;
+}
+
+.an-xp-label {
+  font-family: var(--font-mono);
+  font-size: 8px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   RANK UP PANEL                                         ║
+   ╚══════════════════════════════════════════════════════════╝ */
+/* XP Summary */
+.xp-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 480px) {
+  .xp-summary { grid-template-columns: repeat(4, 1fr); }
+}
+
+.xp-card {
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.xp-card-val {
+  font-family: var(--font-mono);
+  font-size: clamp(20px, 6vw, 28px);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.xp-card-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Rank cards */
+.rank-list { display: flex; flex-direction: column; gap: 10px; }
+
+.rank-card {
+  background: var(--dungeon);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative; overflow: hidden;
+  transition: all 0.3s;
+}
+
+.rank-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px;
+  transition: box-shadow 0.3s;
+}
+
+/* Rank colors */
+.rank-card[data-rank="E"]::before { background: var(--text-muted); }
+.rank-card[data-rank="D"]::before { background: #4caf50; }
+.rank-card[data-rank="C"]::before { background: var(--blue); }
+.rank-card[data-rank="B"]::before { background: var(--purple-bright); }
+.rank-card[data-rank="A"]::before { background: var(--red); }
+.rank-card[data-rank="S"]::before { background: var(--gold); box-shadow: 0 0 15px var(--gold-glow); }
+
+.rank-card.unlocked {
+  border-color: rgba(0,255,170,0.3);
+}
+
+.rank-card.current {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.rank-card[data-rank="S"].current {
+  animation: s-rank-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes s-rank-pulse {
+  0%,100% { box-shadow: 0 0 15px var(--gold-glow); }
+  50%      { box-shadow: 0 0 40px var(--gold-glow), 0 0 80px rgba(255,194,0,0.15); }
+}
+
+.rank-icon { font-size: 30px; flex-shrink: 0; width: 36px; text-align: center; }
+
+.rank-body { flex: 1; min-width: 0; }
+
+.rank-name {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.rank-card[data-rank="E"] .rank-name { color: var(--text-muted); }
+.rank-card[data-rank="D"] .rank-name { color: #4caf50; }
+.rank-card[data-rank="C"] .rank-name { color: var(--blue); }
+.rank-card[data-rank="B"] .rank-name { color: var(--purple-bright); }
+.rank-card[data-rank="A"] .rank-name { color: var(--red); }
+.rank-card[data-rank="S"] .rank-name { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+
+.rank-title { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.rank-ability { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+.rank-prog {
+  margin-top: 8px;
+  height: 3px; background: var(--border);
+  border-radius: 2px; overflow: hidden;
+}
+
+.rank-prog-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.7s var(--ease-out);
+}
+
+.rank-badge-status {
+  flex-shrink: 0;
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 5px 10px; border-radius: var(--radius-sm);
+  text-align: center; min-width: 60px;
+  font-weight: 700;
+}
+
+.badge-locked   { color: var(--text-muted); background: var(--abyss); border: 1px solid var(--border); }
+.badge-done     { color: var(--green); background: var(--green-dim); border: 1px solid rgba(0,255,170,0.3); }
+.badge-current  { color: var(--gold); background: var(--gold-trace); border: 1px solid var(--gold-dim); animation: badge-blink 1.5s ease-in-out infinite; }
+
+@keyframes badge-blink {
+  0%,100% { box-shadow: none; }
+  50%      { box-shadow: 0 0 10px var(--gold-glow); }
+}
+
+/* Danger zone */
+.danger-zone {
+  margin-top: 32px;
+  padding: 16px;
+  border: 1px solid var(--red-dim);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.danger-label {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--red); letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+.danger-btn {
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 9px 20px; border-radius: var(--radius-sm);
+  cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.danger-btn:hover { background: rgba(255,34,85,0.15); box-shadow: 0 0 15px rgba(255,34,85,0.3); }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   TOAST                                                 ║
+   ╚══════════════════════════════════════════════════════════╝ */
+#toast {
+  position: fixed; top: -70px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 1px;
+  padding: 10px 22px;
+  border-radius: 100px;
+  box-shadow: 0 0 20px var(--green-glow);
+  text-shadow: 0 0 6px var(--green-glow);
+  transition: top 0.4s var(--ease-out);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+#toast.show { top: 76px; }
+
+/* XP float animation */
+.xp-float {
+  position: fixed;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: var(--gold); text-shadow: 0 0 8px var(--gold-glow);
+  pointer-events: none;
+  z-index: 9998;
+  animation: xp-rise 1.2s var(--ease-out) forwards;
+}
+
+@keyframes xp-rise {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
+
+/* Particle burst */
+.particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9997;
+  animation: ptcl 0.9s var(--ease-out) forwards;
+}
+
+@keyframes ptcl {
+  0%   { opacity: 1; transform: scale(1) translate(0,0); }
+  100% { opacity: 0; transform: scale(0) var(--ptcl-move); }
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   RESPONSIVE                                            ║
+   ╚══════════════════════════════════════════════════════════╝ */
+@media (min-width: 600px) {
+  .panel { padding: 24px 24px; }
+  .dash-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .quest-item { min-height: 64px; }
+}
+
+@media (min-width: 900px) {
+  .panel { max-width: 900px; margin: 0 auto; padding: 28px 32px; }
+  .quest-list { gap: 8px; }
+  .hab-grid-wrap { padding: 16px 20px 20px; }
+  .grid-day { min-height: 40px; }
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   QUESTS MANAGEMENT PANEL                               ║
+   ╚══════════════════════════════════════════════════════════╝ */
+
+.add-quest-form {
+  background: var(--dungeon);
+  border: 1px solid var(--purple);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 24px var(--purple-glow);
+}
+.add-quest-form::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--blue), var(--gold));
+}
+.aqf-label {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--purple-bright); letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.aqf-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.aqf-emoji-btn {
+  width: 52px; height: 52px; flex-shrink: 0;
+  background: var(--abyss); border: 1px solid var(--border);
+  border-radius: var(--radius-md); font-size: 24px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; position: relative;
+}
+.aqf-emoji-btn:hover { border-color: var(--purple); box-shadow: 0 0 10px var(--purple-glow); }
+.aqf-name-inp {
+  flex: 1; height: 52px;
+  background: var(--abyss); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  padding: 0 14px; transition: border-color 0.2s; -webkit-appearance: none;
+}
+.aqf-name-inp::placeholder { color: var(--text-muted); font-weight: 400; }
+.aqf-name-inp:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 2px var(--purple-trace); }
+.aqf-add-btn {
+  height: 52px; padding: 0 20px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--purple), #5500aa);
+  border: 1px solid var(--purple-bright); border-radius: var(--radius-md);
+  color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.aqf-add-btn:hover { box-shadow: 0 0 16px var(--purple-glow); transform: translateY(-1px); }
+.aqf-add-btn:active { transform: scale(0.97); }
+
+/* Emoji Picker */
+.em-picker {
+  display: none; flex-wrap: wrap; gap: 4px;
+  position: fixed; z-index: 800;
+  background: var(--chamber); border: 1px solid var(--purple);
+  border-radius: var(--radius-md); padding: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 20px var(--purple-glow);
+  width: 228px; max-height: 210px; overflow-y: auto;
+}
+.em-picker.open { display: flex; }
+.em-btn {
+  width: 36px; height: 36px; font-size: 18px;
+  background: var(--dungeon); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.em-btn:hover { background: var(--vault); border-color: var(--purple); transform: scale(1.15); }
+
+/* Quest management list */
+.qm-list { display: flex; flex-direction: column; gap: 5px; }
+.qm-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.qm-meta-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.qm-meta-count b { color: var(--gold); }
+.qm-meta-hint { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); letter-spacing: 0.5px; }
+
+.qm-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--dungeon); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 9px 12px;
+  cursor: grab; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.qm-item::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--purple); opacity: 0; transition: opacity 0.2s;
+}
+.qm-item:hover::before { opacity: 1; }
+.qm-item.drag-over { border-color: var(--purple); box-shadow: 0 0 14px var(--purple-glow); }
+.qm-item.dragging  { opacity: 0.35; transform: scale(0.97); }
+
+.qm-handle { color: var(--text-faint); font-size: 16px; cursor: grab; flex-shrink: 0; user-select: none; padding: 2px; }
+.qm-handle:hover { color: var(--purple-bright); }
+
+.qm-icon { font-size: 20px; flex-shrink: 0; cursor: pointer; transition: transform 0.2s; }
+.qm-icon:hover { transform: scale(1.25); }
+
+.qm-name-inp {
+  flex: 1; background: transparent; border: 1px solid transparent;
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  padding: 5px 7px; transition: all 0.15s; min-width: 0;
+}
+.qm-name-inp:hover { border-color: var(--border); background: var(--abyss); }
+.qm-name-inp:focus { outline: none; border-color: var(--purple); background: var(--abyss); box-shadow: 0 0 0 2px var(--purple-trace); }
+
+.qm-stat {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
+  background: var(--abyss); border: 1px solid var(--border);
+  border-radius: 100px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0;
+}
+
+.qm-del {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: transparent; border: 1px solid transparent;
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.qm-del:hover { background: var(--red-dim); border-color: var(--red); color: var(--red); box-shadow: 0 0 8px rgba(255,34,85,0.25); }
+
+.qm-empty {
+  text-align: center; padding: 50px 20px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+  letter-spacing: 1px;
+}
+.qm-empty-icon { font-size: 44px; margin-bottom: 14px; }
+
+</style>
+</head>
+<body>
+
+<!-- ══ INTRO SPLASH ══════════════════════════════════════ -->
+<div id="intro-screen">
+  <div class="intro-rune">⚔️</div>
+  <div class="intro-title">Shadow Monarch<br>Daily Quest System</div>
+  <div class="intro-sub">Arise, Hunter</div>
+  <button class="intro-enter" onclick="enterSystem()">▶ ENTER THE SYSTEM</button>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<!-- ══ MAIN APP ══════════════════════════════════════════ -->
+<div class="app" id="main-app" style="display:none">
+
+  <!-- HUD -->
+  <header class="hud">
+    <div class="hud-crown">
+      <div class="hud-wordmark">
+        <span class="hud-icon">⚔️</span>
+        <span class="hud-name">Shadow Monarch</span>
+      </div>
+      <div class="rank-pill" id="rank-pill">⏳ Scanning...</div>
+    </div>
+    <div class="hud-xp-bar"><div class="hud-xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <div class="hud-stats">
+      <div class="hud-stat">
+        <div class="hud-stat-label">Total XP</div>
+        <div class="hud-stat-val gold" id="h-xp">0</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-label">Cleared</div>
+        <div class="hud-stat-val green" id="h-done">0</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-label">Progress</div>
+        <div class="hud-stat-val blue" id="h-pct">0%</div>
+      </div>
+      <div class="hud-stat">
+        <div class="hud-stat-label">Best Day</div>
+        <div class="hud-stat-val red" id="h-best">0/10</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <button class="nav-btn active" data-panel="today"     onclick="openPanel('today',this)">⚡ Today</button>
+    <button class="nav-btn"        data-panel="daily"     onclick="openPanel('daily',this)">📅 Daily</button>
+    <button class="nav-btn"        data-panel="dashboard" onclick="openPanel('dashboard',this)">🏠 Dashboard</button>
+    <button class="nav-btn"        data-panel="analysis"  onclick="openPanel('analysis',this)">📊 Analysis</button>
+    <button class="nav-btn"        data-panel="rankup"    onclick="openPanel('rankup',this)">👑 Rank Up</button>
+    <button class="nav-btn"        data-panel="quests"   onclick="openPanel('quests',this)">⚙️ Quests</button>
+  </nav>
+
+  <!-- PANELS -->
+  <main>
+    <div class="panel active" id="panel-today"></div>
+    <div class="panel" id="panel-daily"></div>
+    <div class="panel" id="panel-dashboard"></div>
+    <div class="panel" id="panel-analysis"></div>
+    <div class="panel" id="panel-rankup"></div>
+    <div class="panel" id="panel-quests"></div>
+  </main>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   DATA & CONFIG
+   ════════════════════════════════════════════════════════════ */
+const DEFAULT_HABITS = [
+  { e:'☀️', n:'Wake Up Early (9am)' },
+  { e:'🚫', n:'No Gooning' },
+  { e:'📚', n:'Reading / Learning' },
+  { e:'📅', n:'Day Planning' },
+  { e:'💰', n:'Budget Tracking' },
+  { e:'💼', n:'Project Work' },
+  { e:'🥗', n:'No Junk Food' },
+  { e:'📵', n:'Social Media Detox' },
+  { e:'📔', n:'Goal Journaling' },
+  { e:'🚿', n:'Cold Shower' },
+];
+let HABITS = JSON.parse(JSON.stringify(DEFAULT_HABITS));
+
+const RANKS = [
+  { r:'E', icon:'🗡',  name:'E-Rank',  title:'Beginner Hunter',   min:0,    max:499,  color:'#7a7aaa', ability:'Your journey begins' },
+  { r:'D', icon:'⚔️',  name:'D-Rank',  title:'Apprentice Hunter', min:500,  max:999,  color:'#4caf50', ability:'Consistency unlocked' },
+  { r:'C', icon:'🛡',  name:'C-Rank',  title:'Skilled Hunter',    min:1000, max:1499, color:'#0af',    ability:'Streak bonuses active' },
+  { r:'B', icon:'⚡',  name:'B-Rank',  title:'Elite Hunter',      min:1500, max:2099, color:'#b44dff', ability:'Advanced analytics' },
+  { r:'A', icon:'💫',  name:'A-Rank',  title:'Shadow Hunter',     min:2100, max:2499, color:'#ff2255', ability:'Full system mastery' },
+  { r:'S', icon:'👑',  name:'S-Rank',  title:'Shadow Monarch',    min:2500, max:3100, color:'#ffc200', ability:'ALL QUESTS COMPLETE' },
+];
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// App state
+const S = {
+  year: 2026, month: 0,          // viewing month
+  data: {},                       // "y-m-d-h" => true
+  currentPanel: 'today',
+};
+
+/* ── Storage ─────────────────────────────────────────────── */
+/* Storage: Claude persistent API with in-memory fallback */
+const MEM = {};
+
+async function storageSet(key, val) {
+  const str = JSON.stringify(val);
+  MEM[key] = str;
+  if (window.storage) {
+    try { await window.storage.set(key, str); } catch(_){}
+  }
+}
+
+async function storageGet(key) {
+  if (window.storage) {
+    try {
+      const r = await window.storage.get(key);
+      if (r) return r.value;
+    } catch(_){}
+  }
+  return MEM[key] || null;
+}
+
+function persist() {
+  storageSet('sm_data', S.data);
+  storageSet('sm_view', { y: S.year, m: S.month });
+}
+
+async function hydrate() {
+  try {
+    const d = await storageGet('sm_data');
+    const v = await storageGet('sm_view');
+    const h = await storageGet('sm_habits');
+    if (d) S.data = JSON.parse(d);
+    if (v) { const p = JSON.parse(v); S.year = p.y; S.month = p.m; }
+    if (h) HABITS = JSON.parse(h);
+  } catch (_) {}
+}
+
+function persistHabits() {
+  storageSet('sm_habits', HABITS);
+}
+
+/* ── Key helpers ─────────────────────────────────────────── */
+const K = (y,m,d,h) => `${y}-${m}-${d}-${h}`;
+const checked = (y,m,d,h) => !!S.data[K(y,m,d,h)];
+
+function toggle(y,m,d,h) {
+  const k = K(y,m,d,h);
+  S.data[k] = !S.data[k];
+  persist();
+  return S.data[k];
+}
+
+function daysInMonth(y,m) { return new Date(y, m+1, 0).getDate(); }
+
+// First day of month: Mon-based (0=Mon…6=Sun)
+function firstDow(y,m) { return (new Date(y,m,1).getDay() + 6) % 7; }
+
+/* ── Stats ───────────────────────────────────────────────── */
+function monthStats(y,m) {
+  const days = daysInMonth(y,m);
+  let done = 0, bestDay = 0;
+  for (let d = 1; d <= days; d++) {
+    let dd = 0;
+    for (let h = 0; h < HABITS.length; h++) if (checked(y,m,d,h)) { done++; dd++; }
+    if (dd > bestDay) bestDay = dd;
+  }
+  const total = days * HABITS.length;
+  return { done, total, bestDay, xp: done * 10, pct: total ? Math.round(done/total*100) : 0 };
+}
+
+function habitStats(y,m,h) {
+  const days = daysInMonth(y,m);
+  let done = 0;
+  for (let d=1; d<=days; d++) if (checked(y,m,d,h)) done++;
+  return { done, goal: days, pct: days ? Math.round(done/days*100) : 0 };
+}
+
+function dayStats(y,m,d) {
+  let done = 0;
+  for (let h=0; h<HABITS.length; h++) if (checked(y,m,d,h)) done++;
+  return { done, total: HABITS.length, pct: Math.round(done/HABITS.length*100) };
+}
+
+function currentRank(xp) {
+  let cur = RANKS[0];
+  for (const r of RANKS) if (xp >= r.min) cur = r;
+  return cur;
+}
+
+/* ── HUD update ──────────────────────────────────────────── */
+function refreshHUD() {
+  const st = monthStats(S.year, S.month);
+  const rk = currentRank(st.xp);
+
+  document.getElementById('h-xp').textContent   = st.xp.toLocaleString();
+  document.getElementById('h-done').textContent  = st.done;
+  document.getElementById('h-pct').textContent   = st.pct + '%';
+  document.getElementById('h-best').textContent  = st.bestDay + '/' + HABITS.length;
+  document.getElementById('rank-pill').textContent = rk.icon + ' ' + rk.name;
+
+  // XP bar: map 0–3100 to 0–100%
+  document.getElementById('xp-fill').style.width = Math.min(100, st.xp / 31) + '%';
+}
+
+/* ════════════════════════════════════════════════════════════
+   INTRO
+   ════════════════════════════════════════════════════════════ */
+async function enterSystem() {
+  // Make sure data is loaded before showing app
+  await hydrate();
+  const intro = document.getElementById('intro-screen');
+  intro.classList.add('intro-out');
+  setTimeout(() => {
+    intro.style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    refreshHUD();
+    renderPanel('today');
+  }, 500);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PANEL ROUTER
+   ════════════════════════════════════════════════════════════ */
+function openPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  S.currentPanel = name;
+  renderPanel(name);
+}
+
+function renderPanel(name) {
+  if (name === 'today')     renderToday();
+  if (name === 'daily')     renderDaily();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'analysis')  renderAnalysis();
+  if (name === 'rankup')    renderRankup();
+  if (name === 'quests')   renderQuests();
+}
+
+/* ════════════════════════════════════════════════════════════
+   TODAY PANEL
+   ════════════════════════════════════════════════════════════ */
+function renderToday() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const ds = dayStats(y, m, d);
+
+  const pct = ds.pct;
+  let bigColor = '#ff2255';
+  if (pct >= 80) bigColor = '#00ffaa';
+  else if (pct >= 50) bigColor = '#ffc200';
+
+  const barGrad = pct >= 80
+    ? 'linear-gradient(90deg, #00cc77, #00ffaa)'
+    : pct >= 50
+    ? 'linear-gradient(90deg, #cc9900, #ffc200)'
+    : 'linear-gradient(90deg, #cc002e, #ff2255)';
+
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  const p = document.getElementById('panel-today');
+  p.innerHTML = `
+    <div class="s-head">Daily Quest Log</div>
+
+    <div class="today-hero">
+      <div class="today-hero-date">
+        ⚡ ${dayNames[now.getDay()].toUpperCase()} — ${String(d).padStart(2,'0')} ${MONTHS[m].toUpperCase()} ${y}
+      </div>
+      <div class="today-hero-progress">
+        <div class="today-big-pct" style="color:${bigColor};text-shadow:0 0 15px ${bigColor}">${pct}%</div>
+        <div class="today-hero-right">
+          <div class="today-bar-label">QUEST COMPLETION</div>
+          <div class="today-bar">
+            <div class="today-bar-fill" id="td-bar" style="width:${pct}%;background:${barGrad}"></div>
+          </div>
+          <div class="today-xp-gained">+${ds.done * 10} XP earned today</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="s-head">Active Quests</div>
+    <div class="quest-list" id="quest-list"></div>
+  `;
+
+  const list = p.querySelector('#quest-list');
+  HABITS.forEach((hab, h) => {
+    const done = checked(y, m, d, h);
+    const el = createQuestItem(hab, h, done, () => {
+      const nowDone = toggle(y, m, d, h);
+      el.classList.toggle('done', nowDone);
+      el.querySelector('.quest-check').textContent = nowDone ? '✓' : '';
+      el.querySelector('.quest-name').style.textDecoration = nowDone ? 'line-through' : '';
+      if (nowDone) {
+        burst(el);
+        floatXP(el, '+10 XP');
+        toast(`${hab.e} Quest Cleared! +10 XP`);
+      }
+      refreshHUD();
+      // Update hero block
+      const ds2 = dayStats(y, m, d);
+      const pct2 = ds2.pct;
+      let c2 = '#ff2255';
+      if (pct2 >= 80) c2 = '#00ffaa';
+      else if (pct2 >= 50) c2 = '#ffc200';
+      const g2 = pct2 >= 80
+        ? 'linear-gradient(90deg,#00cc77,#00ffaa)'
+        : pct2 >= 50
+        ? 'linear-gradient(90deg,#cc9900,#ffc200)'
+        : 'linear-gradient(90deg,#cc002e,#ff2255)';
+      document.querySelector('.today-big-pct').style.color = c2;
+      document.querySelector('.today-big-pct').style.textShadow = `0 0 15px ${c2}`;
+      document.querySelector('.today-big-pct').textContent = pct2 + '%';
+      const bar = document.getElementById('td-bar');
+      if (bar) { bar.style.width = pct2+'%'; bar.style.background = g2; }
+      document.querySelector('.today-xp-gained').textContent = `+${ds2.done*10} XP earned today`;
+    });
+    list.appendChild(el);
+  });
+}
+
+function createQuestItem(hab, h, done, onClick) {
+  const el = document.createElement('div');
+  el.className = 'quest-item' + (done ? ' done' : '');
+  el.innerHTML = `
+    <span class="quest-emoji">${hab.e}</span>
+    <div class="quest-body">
+      <div class="quest-name">${hab.n}</div>
+      <div class="quest-sub">+10 XP on completion</div>
+    </div>
+    <div class="quest-check">${done ? '✓' : ''}</div>
+  `;
+  el.addEventListener('click', (e) => {
+    // Ripple
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = el.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    el.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+    onClick();
+  });
+  return el;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DAILY PANEL
+   ════════════════════════════════════════════════════════════ */
+function renderDaily() {
+  const p = document.getElementById('panel-daily');
+  p.innerHTML = `
+    <div class="month-nav-bar">
+      <div class="month-display" id="d-month">${MONTHS[S.month].toUpperCase()} ${S.year}</div>
+      <div class="month-arrows">
+        <button class="arr-btn" onclick="shiftMonth(-1)">‹</button>
+        <button class="arr-btn" onclick="shiftMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="s-head">Habit Log</div>
+    <div class="habit-accordion" id="hab-acc"></div>
+  `;
+
+  buildAccordion();
+}
+
+function buildAccordion() {
+  const acc = document.getElementById('hab-acc');
+  if (!acc) return;
+  acc.innerHTML = '';
+  HABITS.forEach((hab, h) => buildHabRow(acc, hab, h));
+}
+
+function buildHabRow(container, hab, h) {
+  const hs = habitStats(S.year, S.month, h);
+  const days = daysInMonth(S.year, S.month);
+  const fdow = firstDow(S.year, S.month);
+
+  const row = document.createElement('div');
+  row.className = 'hab-row' + (hs.done > 0 ? ' has-progress' : '');
+  row.innerHTML = `
+    <div class="hab-head">
+      <span class="hab-emoji">${hab.e}</span>
+      <div class="hab-info">
+        <div class="hab-name">${hab.n}</div>
+        <div class="hab-meta">
+          <span class="hab-done-count" id="hdc-${h}">${hs.done}/${hs.goal} cleared</span>
+          <span class="hab-pct" id="hpc-${h}">${hs.pct}%</span>
+        </div>
+        <div class="hab-mini-bar">
+          <div class="hab-mini-fill" id="hmf-${h}" style="width:${hs.pct}%"></div>
+        </div>
+      </div>
+      <span class="hab-chevron">▾</span>
+    </div>
+    <div class="hab-grid-wrap" id="hgw-${h}"></div>
+  `;
+
+  // Toggle expand
+  row.querySelector('.hab-head').addEventListener('click', () => {
+    row.classList.toggle('open');
+    if (row.classList.contains('open') && !row.querySelector('.grid-week-row')) {
+      buildDayGrid(row.querySelector('.hab-grid-wrap'), h, fdow, days);
+    }
+  });
+
+  container.appendChild(row);
+}
+
+function buildDayGrid(wrap, h, fdow, days) {
+  wrap.innerHTML = '';
+
+  // Day labels
+  const labelRow = document.createElement('div');
+  labelRow.className = 'grid-week-row';
+  WEEK_DAYS.forEach(d => {
+    const lbl = document.createElement('div');
+    lbl.className = 'grid-day-label';
+    lbl.textContent = d;
+    labelRow.appendChild(lbl);
+  });
+  wrap.appendChild(labelRow);
+
+  // Cells
+  const total = Math.ceil((fdow + days) / 7) * 7;
+  let rowEl = null;
+
+  for (let i = 0; i < total; i++) {
+    if (i % 7 === 0) {
+      rowEl = document.createElement('div');
+      rowEl.className = 'grid-week-row';
+      wrap.appendChild(rowEl);
+    }
+    const dayNum = i - fdow + 1;
+    const cell = document.createElement('div');
+
+    if (dayNum < 1 || dayNum > days) {
+      cell.className = 'grid-day blank';
+    } else {
+      const isChecked = checked(S.year, S.month, dayNum, h);
+      cell.className = 'grid-day' + (isChecked ? ' checked' : '');
+      cell.innerHTML = `<span class="gd-num">${dayNum}</span><span class="gd-check">${isChecked ? '✓' : '·'}</span>`;
+      cell.addEventListener('click', () => {
+        const now = toggle(S.year, S.month, dayNum, h);
+        cell.classList.toggle('checked', now);
+        cell.querySelector('.gd-check').textContent = now ? '✓' : '·';
+        if (now) burst(cell);
+        refreshHUD();
+        updateHabRowStats(h);
+      });
+    }
+    rowEl.appendChild(cell);
+  }
+}
+
+function updateHabRowStats(h) {
+  const hs = habitStats(S.year, S.month, h);
+  const dc = document.getElementById(`hdc-${h}`);
+  const pc = document.getElementById(`hpc-${h}`);
+  const mf = document.getElementById(`hmf-${h}`);
+  if (dc) dc.textContent = `${hs.done}/${hs.goal} cleared`;
+  if (pc) pc.textContent = hs.pct + '%';
+  if (mf) mf.style.width = hs.pct + '%';
+}
+
+function shiftMonth(dir) {
+  S.month += dir;
+  if (S.month < 0)  { S.month = 11; S.year--; }
+  if (S.month > 11) { S.month = 0;  S.year++; }
+  persist();
+  renderDaily();
+  refreshHUD();
+}
+
+/* ════════════════════════════════════════════════════════════
+   DASHBOARD
+   ════════════════════════════════════════════════════════════ */
+function renderDashboard() {
+  const days = daysInMonth(S.year, S.month);
+  const now = new Date();
+  const todayD = (now.getFullYear()===S.year && now.getMonth()===S.month) ? now.getDate() : -1;
+  const C = 2 * Math.PI * 26; // circumference for r=26
+
+  const p = document.getElementById('panel-dashboard');
+  p.innerHTML = `
+    <div class="s-head">${MONTHS[S.month]} ${S.year} — Quest Board</div>
+    <div class="dash-grid" id="dash-grid"></div>
+  `;
+
+  const grid = p.querySelector('#dash-grid');
+  const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  for (let d = 1; d <= days; d++) {
+    const ds = dayStats(S.year, S.month, d);
+    const isToday = d === todayD;
+    const pct = ds.pct;
+
+    let stroke = '#ff2255';
+    let txtColor = '#ff2255';
+    if (pct >= 80) { stroke = '#00ffaa'; txtColor = '#00ffaa'; }
+    else if (pct >= 50) { stroke = '#ffc200'; txtColor = '#ffc200'; }
+
+    const dashArr = (pct / 100) * C;
+    const dow = new Date(S.year, S.month, d).getDay();
+    const dateStr = `${DAY_LABELS[dow]} ${String(d).padStart(2,'0')}`;
+
+    const card = document.createElement('div');
+    card.className = 'day-card' + (isToday ? ' is-today' : '');
+
+    card.innerHTML = `
+      <div class="today-tag">◆ TODAY ◆</div>
+      <div class="dc-head">${dateStr}</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="64" height="64" viewBox="0 0 64 64">
+          <circle class="d-bg" cx="32" cy="32" r="26"/>
+          <circle class="d-fg" cx="32" cy="32" r="26"
+            stroke="${stroke}"
+            stroke-dasharray="${dashArr.toFixed(1)} ${C.toFixed(1)}"/>
+        </svg>
+        <div class="donut-val" style="color:${txtColor};text-shadow:0 0 8px ${stroke}">${pct}%</div>
+      </div>
+      <div class="dc-tasks">
+        ${HABITS.slice(0,6).map((h,i) => {
+          const done = checked(S.year,S.month,d,i);
+          return `<div class="dc-task${done?' done':''}">
+            <span class="dc-task-icon">${done?'✓':'○'}</span>
+            <span>${h.e} ${h.n.split('/')[0].trim().split('(')[0].trim()}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANALYSIS
+   ════════════════════════════════════════════════════════════ */
+function renderAnalysis() {
+  const p = document.getElementById('panel-analysis');
+  p.innerHTML = `
+    <div class="s-head">${MONTHS[S.month]} ${S.year} — Power Analysis</div>
+    <div class="an-list"></div>
+  `;
+  const list = p.querySelector('.an-list');
+
+  HABITS.forEach((hab, h) => {
+    const hs = habitStats(S.year, S.month, h);
+    const xp = hs.done * 10;
+
+    const card = document.createElement('div');
+    card.className = 'an-card';
+    card.innerHTML = `
+      <div class="an-emoji">${hab.e}</div>
+      <div class="an-body">
+        <div class="an-name">${hab.n}</div>
+        <div class="an-bar">
+          <div class="an-bar-fill" style="width:${hs.pct}%"></div>
+        </div>
+        <div class="an-row">
+          <span class="an-done">✓ ${hs.done} done</span>
+          <span class="an-goal">/ ${hs.goal} days</span>
+          <span class="an-pct">${hs.pct}%</span>
+        </div>
+      </div>
+      <div class="an-xp-block">
+        <div class="an-xp-num">${xp}</div>
+        <div class="an-xp-label">XP</div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   RANK UP
+   ════════════════════════════════════════════════════════════ */
+function renderRankup() {
+  const st = monthStats(S.year, S.month);
+  const rk = currentRank(st.xp);
+  const nextRk = RANKS.find(r => st.xp < r.min);
+
+  const p = document.getElementById('panel-rankup');
+  p.innerHTML = `
+    <div class="s-head">Hunter Rank System</div>
+    <div class="xp-summary">
+      <div class="xp-card">
+        <div class="xp-card-val" style="color:#ffc200;text-shadow:0 0 10px rgba(255,194,0,0.5)">${st.xp}</div>
+        <div class="xp-card-lbl">Total XP</div>
+      </div>
+      <div class="xp-card">
+        <div class="xp-card-val" style="color:#00ffaa;text-shadow:0 0 8px rgba(0,255,170,0.4)">${st.done}</div>
+        <div class="xp-card-lbl">Cleared</div>
+      </div>
+      <div class="xp-card">
+        <div class="xp-card-val" style="color:#0af;text-shadow:0 0 8px rgba(0,170,255,0.4)">${st.pct}%</div>
+        <div class="xp-card-lbl">Progress</div>
+      </div>
+      <div class="xp-card">
+        <div class="xp-card-val" style="color:#b44dff;text-shadow:0 0 8px rgba(180,77,255,0.4)">${st.bestDay}/10</div>
+        <div class="xp-card-lbl">Best Day</div>
+      </div>
+    </div>
+    <div class="rank-list" id="rank-list"></div>
+    ${nextRk ? `<div style="text-align:center;margin-top:20px;font-family:var(--font-mono);font-size:12px;color:var(--blue);text-shadow:0 0 6px var(--blue-glow)">⚡ ${nextRk.min - st.xp} XP needed for ${nextRk.name}</div>` : `<div style="text-align:center;margin-top:20px;font-family:var(--font-display);font-size:16px;color:var(--gold);text-shadow:0 0 20px var(--gold-glow);animation:badge-blink 2s infinite">👑 SHADOW MONARCH ACHIEVED</div>`}
+    <div class="danger-zone">
+      <div class="danger-label">⚠ Danger Zone</div>
+      <button class="danger-btn" onclick="resetAll()">RESET ALL QUEST DATA</button>
+    </div>
+  `;
+
+  const rl = p.querySelector('#rank-list');
+  RANKS.forEach(rank => {
+    const unlocked = st.xp >= rank.min;
+    const isCurrent = rank.r === rk.r;
+    const prog = unlocked ? Math.min(100, Math.round((st.xp - rank.min) / (rank.max - rank.min) * 100)) : 0;
+
+    const card = document.createElement('div');
+    card.className = `rank-card${unlocked?' unlocked':''}${isCurrent?' current':''}`;
+    card.dataset.rank = rank.r;
+    card.innerHTML = `
+      <div class="rank-icon">${rank.icon}</div>
+      <div class="rank-body">
+        <div class="rank-name">${rank.name}</div>
+        <div class="rank-title">${rank.title}</div>
+        <div class="rank-ability">${rank.ability}</div>
+        <div class="rank-prog">
+          <div class="rank-prog-fill" style="width:${prog}%;background:${rank.color};box-shadow:0 0 6px ${rank.color}"></div>
+        </div>
+      </div>
+      <div class="rank-badge-status ${isCurrent?'badge-current':unlocked?'badge-done':'badge-locked'}">
+        ${isCurrent ? '▶ NOW' : unlocked ? '✓ DONE' : '🔒'}
+      </div>
+    `;
+    rl.appendChild(card);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   EFFECTS
+   ════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function burst(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#00ffaa','#8b00ff','#ffc200','#0af','#ff2255'];
+
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 6;
+    const angle = (Math.PI * 2 * i) / 10;
+    const dist = 30 + Math.random() * 40;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+    p.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${cx}px;top:${cy}px;
+      background:${colors[i % colors.length]};
+      box-shadow:0 0 6px ${colors[i%colors.length]};
+      --ptcl-move:translate(${tx}px,${ty}px);
+      animation-delay:${Math.random()*0.1}s;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+function floatXP(el, text) {
+  const rect = el.getBoundingClientRect();
+  const f = document.createElement('div');
+  f.className = 'xp-float';
+  f.textContent = text;
+  f.style.cssText = `left:${rect.left + rect.width/2}px;top:${rect.top}px;transform:translateX(-50%)`;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 1300);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   QUESTS MANAGEMENT PANEL
+   ════════════════════════════════════════════════════════════ */
+
+const ALL_EMOJIS = ['☀️','🌙','⭐','🔥','💧','🌱','🏃','💪','🧠','📚','✍️','🎯','💰','🛡','⚔️','🗡','💎','👑','🏆','🎮','🚀','✈️','🌍','🎵','🎨','📝','💼','🏋️','🥗','💊','🚿','🧘','😴','🤝','❤️','🦁','🐺','🦅','🔑','⚡','🌊','🏔','🌲','🎪','🎭','📵','📔','📅','🚫','🚗','🏠','💡','🔬','🧪','📊','🎓','🏅','🥇','🌟','💫'];
+let dragSrcIdx = null;
+let activeEmPicker = null;
+
+/* ── Main render ── */
+function renderQuests() {
+  const p = document.getElementById('panel-quests');
+
+  p.innerHTML = `
+    <div class="s-head">Quest Manager</div>
+
+    <div class="add-quest-form">
+      <div class="aqf-label">▸ Add New Quest</div>
+      <div class="aqf-row">
+        <button class="aqf-emoji-btn" id="aqf-emoji-btn" onclick="toggleAddPicker(event)">⚔️</button>
+        <input class="aqf-name-inp" id="aqf-name" type="text"
+          placeholder="Quest name..." maxlength="50"
+          onkeydown="if(event.key==='Enter')addQuest()"/>
+        <button class="aqf-add-btn" onclick="addQuest()">+ ADD</button>
+      </div>
+    </div>
+
+    <div class="qm-meta">
+      <div class="qm-meta-count">Active Quests: <b id="qm-count">${HABITS.length}</b> / 20</div>
+      <div class="qm-meta-hint">⠿ drag to reorder  •  tap icon to change  •  click name to rename</div>
+    </div>
+    <div class="qm-list" id="qm-list"></div>
+  `;
+
+  buildQMList();
+}
+
+/* ── Build the sortable list ── */
+function buildQMList() {
+  const list = document.getElementById('qm-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const countEl = document.getElementById('qm-count');
+  if (countEl) countEl.textContent = HABITS.length;
+
+  if (HABITS.length === 0) {
+    list.innerHTML = '<div class="qm-empty"><div class="qm-empty-icon">⚔️</div>No quests. Add one above.</div>';
+    return;
+  }
+
+  HABITS.forEach((hab, idx) => {
+    const hs = habitStats(S.year, S.month, idx);
+    const item = document.createElement('div');
+    item.className = 'qm-item';
+    item.draggable = true;
+    item.dataset.idx = idx;
+
+    item.innerHTML =
+      '<span class="qm-handle" title="Drag to reorder">⠿</span>' +
+      '<span class="qm-icon" data-idx="' + idx + '">' + hab.e + '</span>' +
+      '<input class="qm-name-inp" value="' + hab.n.replace(/"/g,'&quot;') + '" maxlength="50" title="Tap to rename"/>' +
+      '<span class="qm-stat">' + hs.done + '/' + hs.goal + ' ✓</span>' +
+      '<button class="qm-del" title="Remove quest">✕</button>';
+
+    /* rename on blur */
+    const inp = item.querySelector('.qm-name-inp');
+    inp.addEventListener('blur',  () => doRename(idx, inp.value));
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  inp.blur();
+      if (e.key === 'Escape') { inp.value = HABITS[idx].n; inp.blur(); }
+    });
+
+    /* change icon */
+    item.querySelector('.qm-icon').addEventListener('click', e => openIconPicker(e, idx));
+
+    /* delete */
+    item.querySelector('.qm-del').addEventListener('click', () => doDelete(idx));
+
+    /* drag */
+    item.addEventListener('dragstart', e => {
+      dragSrcIdx = idx;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.qm-item').forEach(el => el.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      list.querySelectorAll('.qm-item').forEach(el => el.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (dragSrcIdx !== null && dragSrcIdx !== idx) {
+        const moved = HABITS.splice(dragSrcIdx, 1)[0];
+        HABITS.splice(idx, 0, moved);
+        persistHabits(); buildQMList(); refreshHUD();
+        toast('Quest order saved ⚔️');
+      }
+      dragSrcIdx = null;
+    });
+
+    list.appendChild(item);
+  });
+}
+
+/* ── Emoji picker for ADD form ── */
+function toggleAddPicker(e) {
+  e.stopPropagation();
+  closeActiveEmPicker();
+  const btn = document.getElementById('aqf-emoji-btn');
+  const rect = btn.getBoundingClientRect();
+  openEmPicker(rect.left, rect.bottom + 6, em => {
+    btn.textContent = em;
+  });
+}
+
+/* ── Emoji picker for existing habit ── */
+function openIconPicker(e, idx) {
+  e.stopPropagation();
+  closeActiveEmPicker();
+  const rect = e.target.getBoundingClientRect();
+  openEmPicker(rect.left, rect.bottom + 6, em => {
+    HABITS[idx].e = em;
+    persistHabits();
+    buildQMList();
+    toast(em + ' Icon updated!');
+  });
+}
+
+/* ── Generic emoji picker factory ── */
+function openEmPicker(x, y, onSelect) {
+  const div = document.createElement('div');
+  div.className = 'em-picker open';
+  ALL_EMOJIS.forEach(em => {
+    const b = document.createElement('button');
+    b.className = 'em-btn';
+    b.textContent = em;
+    b.onclick = ev => { ev.stopPropagation(); onSelect(em); closeActiveEmPicker(); };
+    div.appendChild(b);
+  });
+
+  /* position */
+  const PW = 228, PH = 210;
+  let left = x, top = y;
+  if (left + PW > window.innerWidth - 8)  left = window.innerWidth - PW - 8;
+  if (top  + PH > window.innerHeight - 8) top  = y - PH - 52;
+  if (top < 8) top = 8;
+  div.style.left = left + 'px';
+  div.style.top  = top  + 'px';
+
+  document.body.appendChild(div);
+  activeEmPicker = div;
+
+  /* close on outside tap */
+  setTimeout(() => {
+    document.addEventListener('click', function outsideTap(ev) {
+      if (!div.contains(ev.target)) { closeActiveEmPicker(); document.removeEventListener('click', outsideTap); }
+    });
+  }, 10);
+}
+
+function closeActiveEmPicker() {
+  if (activeEmPicker) { activeEmPicker.remove(); activeEmPicker = null; }
+}
+
+/* ── CRUD ── */
+function addQuest() {
+  if (HABITS.length >= 20) { toast('⚠️ Max 20 quests reached'); return; }
+  const nameEl  = document.getElementById('aqf-name');
+  const emojiEl = document.getElementById('aqf-emoji-btn');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); toast('⚠️ Enter a quest name first'); return; }
+  const emoji = (emojiEl.textContent || '').trim() || '⚔️';
+  HABITS.push({ e: emoji, n: name });
+  persistHabits();
+  nameEl.value = '';
+  emojiEl.textContent = '⚔️';
+  buildQMList(); refreshHUD();
+  toast(emoji + ' ' + name + ' — Quest added!');
+}
+
+function doRename(idx, val) {
+  const name = val.trim();
+  if (!name) { buildQMList(); return; }
+  if (name === HABITS[idx].n) return;
+  HABITS[idx].n = name;
+  persistHabits();
+  toast('✏️ Renamed to: ' + name);
+}
+
+function doDelete(idx) {
+  if (HABITS.length <= 1) { toast('⚠️ Need at least 1 quest'); return; }
+  if (!confirm('Remove quest: "' + HABITS[idx].n + '"?')) return;
+  HABITS.splice(idx, 1);
+  persistHabits(); buildQMList(); refreshHUD();
+  toast('🗑 Quest removed');
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESET
+   ════════════════════════════════════════════════════════════ */
+function resetAll() {
+  if (!confirm('⚠️ RESET ALL DATA?\nThis cannot be undone. Your rank and XP will be lost.')) return;
+  S.data = {};
+  persist();
+  refreshHUD();
+  renderPanel(S.currentPanel);
+  toast('All quest data cleared. Rise again, Hunter.');
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOT
+   ════════════════════════════════════════════════════════════ */
+hydrate().then(() => {
+  // Auto-skip intro if already visited
+  // (keep intro for first-time feel — user clicks ENTER THE SYSTEM)
+});
+</script>
+</body>
+</html>
